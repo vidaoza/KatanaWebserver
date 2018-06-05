@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
+using System.Web.Http;
 
 namespace KatanaWebserver
 {
@@ -27,18 +28,6 @@ namespace KatanaWebserver
     {
         public void Configuration(IAppBuilder app)
         {
-            /*Dumps Environment KeyValue Pairs*/
-            //app.Use(async (environment, next) =>
-            //{
-            //    foreach (var pair in environment.Environment)
-            //    {
-            //        Console.WriteLine("{0} : {1}", pair.Key, pair.Value);
-            //    }
-
-            //    await next();
-            //});
-
-
             /****
              * Dictionary<T1, T2> vs List<KeyValuePair<<T1, T2>>
              * -------------------------------------------------
@@ -50,7 +39,6 @@ namespace KatanaWebserver
              *      = :) list insertion faster
              *      = :) can be sorted
              ****/
-
 
             app.Use(async (environment, next) =>
             {
@@ -64,8 +52,21 @@ namespace KatanaWebserver
                 Console.WriteLine($"Response Status Code :  {environment.Response.StatusCode}");
             });
 
+            ConfigureWebApi(app);
+
 
             app.UseHelloWorld();
+        }
+
+        private void ConfigureWebApi(IAppBuilder app)
+        {
+            var config = new HttpConfiguration();
+            config.Routes.MapHttpRoute(
+                "DefaultApi", 
+                "api/{controller}/{id}", 
+                new { id = RouteParameter.Optional });
+
+            app.UseWebApi(config);
         }
     }
 
@@ -88,11 +89,11 @@ namespace KatanaWebserver
         {
             Console.WriteLine("Preparing the response");
             //either return a task or throw an exception
-            
+
             var response = environment["owin.ResponseBody"] as Stream;
             using (var writer = new StreamWriter(response))
             {
-                return writer.WriteLineAsync("Middleware Injection = This shit it SO fkn cool.");
+                return writer.WriteLineAsync("Middleware Injection = This shit is SO fkn cool.");
             }
         }
 
