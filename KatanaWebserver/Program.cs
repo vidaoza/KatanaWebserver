@@ -27,22 +27,45 @@ namespace KatanaWebserver
     {
         public void Configuration(IAppBuilder app)
         {
-            /*  A - using app.Run*/
-            //app.Run(environment => 
+            /*Dumps Environment KeyValue Pairs*/
+            //app.Use(async (environment, next) =>
             //{
-            //    return environment.Response.WriteAsync("Hello app.Run");
+            //    foreach (var pair in environment.Environment)
+            //    {
+            //        Console.WriteLine("{0} : {1}", pair.Key, pair.Value);
+            //    }
+
+            //    await next();
             //});
 
-            /* B 
-             1 - Register all components with appBuilder
-             2 - Katana looks for Invoke method (it matches AppFunc signature) via Reflection
-             3 - Instantiates the component and gives the next component in the pipeline
-             4 - Starts using it to process requests.**/
-            //app.Use<HelloWorldComponent>();
 
-            /*C - using AppBuilderExtension*/
+            /****
+             * Dictionary<T1, T2> vs List<KeyValuePair<<T1, T2>>
+             * -------------------------------------------------
+             * Dictionary = :) fast look up
+             *            = :) Ensure unique keys
+             *            = :( Hashing adds overhead
+             *            
+             * List = :) allows duplicate keys
+             *      = :) list insertion faster
+             *      = :) can be sorted
+             ****/
+
+
+            app.Use(async (environment, next) =>
+            {
+                // add stuff to the request.
+                // many web browsers send second request along the first time to get the favicon.ico
+                Console.WriteLine($"Requesting Path :  {environment.Request.Path}");
+
+                await next();
+
+                // Can use this to inject info into the response
+                Console.WriteLine($"Response Status Code :  {environment.Response.StatusCode}");
+            });
+
+
             app.UseHelloWorld();
-
         }
     }
 
@@ -63,11 +86,13 @@ namespace KatanaWebserver
 
         public Task Invoke(IDictionary<string, object> environment)
         {
+            Console.WriteLine("Preparing the response");
             //either return a task or throw an exception
+            
             var response = environment["owin.ResponseBody"] as Stream;
             using (var writer = new StreamWriter(response))
             {
-                return writer.WriteLineAsync("Hello AppBuilder Extension!!");
+                return writer.WriteLineAsync("Middleware Injection = This shit it SO fkn cool.");
             }
         }
 
